@@ -7,7 +7,6 @@ Test cases can be run with the following:
 """
 import logging
 import os
-from datetime import date
 from unittest import TestCase
 
 from service.common import status  # HTTP Status Codes
@@ -159,3 +158,37 @@ class TestAccountService(TestCase):
         """It should list all Accounts"""
         created_accounts = self._create_accounts(3)
         self.check_get_all_accounts(created_accounts)
+
+    def test_get_account_with_no_accounts(self):
+        """It should return 404"""
+        response = self.client.get(
+            f'{BASE_URL}/1',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_account_with_invalid_id(self):
+        """It should not get an account with invalid ID"""
+        new_account = self._create_accounts(1)[0]
+        response = self.client.get(
+            f'{BASE_URL}/{new_account.id + 1}',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_account_with_one_account(self):
+        """It should get an account by ID"""
+        new_account = self._create_accounts(1)[0]
+        response = self.client.get(
+            f'{BASE_URL}/{new_account.id}',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.ensure_same([new_account], [Account().deserialize(response.get_json())])
+
+    def test_get_account_with_multiple_accounts(self):
+        """It should get an account by ID"""
+        new_accounts = self._create_accounts(3)
+        for new_account in new_accounts:
+            response = self.client.get(
+                f'{BASE_URL}/{new_account.id}',
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.ensure_same([new_account], [Account().deserialize(response.get_json())])
