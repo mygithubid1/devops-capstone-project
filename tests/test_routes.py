@@ -5,13 +5,15 @@ Test cases can be run with the following:
   nosetests -v --with-spec --spec-color
   coverage report -m
 """
-import os
 import logging
+import os
+from datetime import date
 from unittest import TestCase
-from tests.factories import AccountFactory
+
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
+from tests.factories import AccountFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
@@ -124,3 +126,36 @@ class TestAccountService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     # ADD YOUR TEST CASES HERE ...
+    def ensure_same(self, expected, actual, skip_id_verification=False):
+        self.assertEqual(len(expected), len(actual))
+        for left, right in zip(expected, actual):
+            self.assertEqual(left.name, right.name)
+            self.assertEqual(left.email, right.email)
+            self.assertEqual(left.address, right.address)
+            self.assertEqual(left.phone_number, right.phone_number)
+            self.assertEqual(str(left.date_joined), str(right.date_joined))
+            if not skip_id_verification:
+                self.assertEqual(left.id, right.id)
+
+    def check_get_all_accounts(self, expected):
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        retrieved_accounts = []
+        for row in response.get_json():
+            account = Account().deserialize(row)
+            retrieved_accounts.append(account)
+        self.ensure_same(expected, retrieved_accounts)
+
+    def test_list_accounts_with_no_accounts(self):
+        """It should list an empty list"""
+        self.check_get_all_accounts([])
+
+    def test_list_accounts_with_single_account(self):
+        """It should list 1 Account"""
+        created_accounts = self._create_accounts(1)
+        self.check_get_all_accounts(created_accounts)
+
+    def test_list_accounts_with_multiple_accounts(self):
+        """It should list all Accounts"""
+        created_accounts = self._create_accounts(3)
+        self.check_get_all_accounts(created_accounts)

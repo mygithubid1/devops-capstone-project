@@ -116,6 +116,8 @@ class Account(db.Model, PersistentBase):
             data (dict): A dictionary containing the resource data
         """
         try:
+            if 'id' in data:
+                self.id = data['id']
             self.name = data["name"]
             self.email = data["email"]
             self.address = data["address"]

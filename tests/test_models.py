@@ -3,10 +3,11 @@ Test cases for Account Model
 
 """
 import logging
-import unittest
 import os
+import unittest
+
 from service import app
-from service.models import Account, DataValidationError, db
+from service.models import Account, DataValidationError, db, PersistentBase
 from tests.factories import AccountFactory
 
 DATABASE_URI = os.getenv(
@@ -175,3 +176,15 @@ class TestAccount(unittest.TestCase):
         """It should not Deserialize an account with a TypeError"""
         account = Account()
         self.assertRaises(DataValidationError, account.deserialize, [])
+
+    def test_repr(self):
+        """It should provide the proper string representation"""
+        account = AccountFactory(name='test_name', id=101)
+        self.assertEqual(repr(account), '<Account test_name id=[101]>')
+
+
+class TestPersistentBase(unittest.TestCase):
+    def test_default_state(self):
+        """It should not associate id with a default instance"""
+        instance = PersistentBase()
+        self.assertIsNone(instance.id)
