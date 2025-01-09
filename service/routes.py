@@ -81,6 +81,19 @@ def get_accounts(account_id):
 ######################################################################
 # UPDATE AN EXISTING ACCOUNT
 ######################################################################
+@app.route('/accounts/<int:account_id>', methods=['PUT'])
+def update_accounts(account_id):
+    app.logger.info(f"Request to update account with id: {account_id}")
+    check_content_type('application/json')
+    account = Account.find(account_id)
+    if not account:
+        abort(status.HTTP_404_NOT_FOUND, f"Account with id {account_id} was not found")
+    account.deserialize(request.get_json())
+    if account.id != account_id:
+        abort(status.HTTP_400_BAD_REQUEST,
+              f"Account with id {account_id} does not match payload with account id: {account.id}")
+    account.update()
+    return jsonify(account.serialize()), status.HTTP_200_OK
 
 
 ######################################################################
