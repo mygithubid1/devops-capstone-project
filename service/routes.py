@@ -4,7 +4,7 @@ Account Service
 This microservice handles the lifecycle of Accounts
 """
 # pylint: disable=unused-import
-from flask import jsonify, request, make_response, abort, url_for   # noqa; F401
+from flask import jsonify, request, make_response, abort, url_for  # noqa; F401
 from service.models import Account
 from service.common import status  # HTTP Status Codes
 from . import app  # Import Flask application
@@ -29,7 +29,7 @@ def index():
         jsonify(
             name="Account REST API Service",
             version="1.0",
-            # paths=url_for("list_accounts", _external=True),
+            paths=url_for("list_accounts", _external=True),
         ),
         status.HTTP_200_OK,
     )
@@ -52,37 +52,35 @@ def create_accounts():
     message = account.serialize()
     # Uncomment once get_accounts has been implemented
     # location_url = url_for("get_accounts", account_id=account.id, _external=True)
-    location_url = "/"  # Remove once get_accounts has been implemented
+    location_url = '/'
     return make_response(
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
 
-######################################################################
-# LIST ALL ACCOUNTS
-######################################################################
 
 # ... place you code here to LIST accounts ...
+@app.route('/accounts', methods=['GET'])
+def list_accounts():
+    app.logger.info("Request to list Accounts")
+    accounts = [account.serialize() for account in Account.all()]
+    return jsonify(accounts), status.HTTP_200_OK
 
 
 ######################################################################
 # READ AN ACCOUNT
 ######################################################################
 
-# ... place you code here to READ an account ...
-
 
 ######################################################################
 # UPDATE AN EXISTING ACCOUNT
 ######################################################################
 
-# ... place you code here to UPDATE an account ...
 
 
 ######################################################################
 # DELETE AN ACCOUNT
 ######################################################################
 
-# ... place you code here to DELETE an account ...
 
 
 ######################################################################
