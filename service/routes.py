@@ -5,8 +5,9 @@ This microservice handles the lifecycle of Accounts
 """
 # pylint: disable=unused-import
 from flask import jsonify, request, make_response, abort, url_for  # noqa; F401
-from service.models import Account
+
 from service.common import status  # HTTP Status Codes
+from service.models import Account
 from . import app  # Import Flask application
 
 
@@ -76,16 +77,24 @@ def get_accounts(account_id):
         abort(status.HTTP_404_NOT_FOUND, f"Account with id {account_id} was not found")
     return jsonify(account.serialize()), status.HTTP_200_OK
 
+
 ######################################################################
 # UPDATE AN EXISTING ACCOUNT
 ######################################################################
 
 
-
 ######################################################################
 # DELETE AN ACCOUNT
 ######################################################################
-
+@app.route('/accounts/<int:account_id>', methods=['DELETE'])
+def delete_accounts(account_id):
+    app.logger.info(f"Request to delete account with id: {account_id}")
+    account = Account.find(account_id)
+    if not account:
+        abort(status.HTTP_404_NOT_FOUND,
+              f"Account with id {account_id} was not found")
+    account.delete()
+    return "", status.HTTP_204_NO_CONTENT
 
 
 ######################################################################
