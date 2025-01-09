@@ -7,6 +7,7 @@ Test cases can be run with the following:
 """
 import logging
 import os
+from datetime import date
 from unittest import TestCase
 
 from service.common import status  # HTTP Status Codes
@@ -212,3 +213,83 @@ class TestAccountService(TestCase):
             self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
             response = self.client.get(f'{BASE_URL}/{new_account.id}')
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_with_no_accounts(self):
+        """It should return 404"""
+        response = self.client.put(
+            f'{BASE_URL}/1',
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_account_with_nonexistent_account(self):
+        """It should not update an account invalid ID"""
+        new_account = self._create_accounts(1)[0]
+        new_account.name += 'DOES NOT MATTER ...'
+        response = self.client.put(
+            f'{BASE_URL}/{new_account.id + 1}',
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_incorrect_content_type(self):
+        """It should not update when content type is incorrect"""
+        response = self.client.put(
+            f'{BASE_URL}/1',
+            content_type="text/html"
+        )
+        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+    def test_update_with_mismatched_id_in_payload(self):
+        """It should not update account when account id and underlying update don't match"""
+        new_account = self._create_accounts(1)[0]
+        new_account_id = new_account.id
+        new_account.id += 1
+        response = self.client.put(
+            f'{BASE_URL}/{new_account_id}',
+            content_type='application/json',
+            json=new_account.serialize()
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_with_incorrect_type_id(self):
+        """It should not update account when ID is invalid"""
+        new_account = self._create_accounts(1)[0]
+        new_account_id = new_account.id
+        new_account.id = 123.456
+        response = self.client.put(
+            f'{BASE_URL}/{new_account_id}',
+            content_type='application/json',
+            json=new_account.serialize()
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_valid_account(self):
+        """It should update a valid account"""
+        new_account = self._create_accounts(1)[0]
+        new_account.name += ' Changed!'
+        response = self.client.put(
+            f'{BASE_URL}/{new_account.id}',
+            content_type="application/json",
+            json=new_account.serialize()
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.ensure_same([new_account], [Account().deserialize(response.get_json())])
+
+    def test_update_proper_date_association(self):
+        """It should update proper date association when no date is explicitly set"""
+        new_account = self._create_accounts(1)[0]
+        serialized = new_account.serialize()
+        del serialized['date_joined']
+        response = self.client.put(
+            f'{BASE_URL}/{new_account.id}',
+            content_type="application/json",
+            json=serialized
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(date.fromisoformat(response.get_json()['date_joined']), date.today())
+
+    def test_unsupported_http_method(self):
+        """It should gracefully handle an unsupported method"""
+        response = self.client.patch(f'{BASE_URL}/1')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
