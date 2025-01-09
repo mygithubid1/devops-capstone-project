@@ -192,3 +192,23 @@ class TestAccountService(TestCase):
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.ensure_same([new_account], [Account().deserialize(response.get_json())])
+
+    def test_invalid_delete_no_accounts(self):
+        """It should not delete an account with invalid ID"""
+        response = self.client.delete(f'{BASE_URL}/1')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_invalid_delete_single_account(self):
+        """It should not delete an account with invalid ID"""
+        new_account = self._create_accounts(1)[0]
+        response = self.client.delete(f'{BASE_URL}/{new_account.id + 1}')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_valid_delete_account_multiple_accounts(self):
+        """It should delete an account with valid ID"""
+        new_accounts = self._create_accounts(1)
+        for new_account in new_accounts:
+            response = self.client.delete(f'{BASE_URL}/{new_account.id}')
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            response = self.client.get(f'{BASE_URL}/{new_account.id}')
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
