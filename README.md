@@ -123,6 +123,20 @@ Please only use these commands for working stand-alone on your own computer with
 
 You can now perform Tekton development locally, just like in the Cloud IDE lab environment.
 
+```bash
+oc apply -f tekton/tasks.yaml
+oc apply -f tekton/pipeline.yaml
+export GITHUB_ACCOUNT=mygithubid1
+tkn pipeline start cd-pipeline \
+    -p repo-url="https://github.com/$GITHUB_ACCOUNT/devops-capstone-project.git" \
+    -p branch="main" \
+    -p app-name="accounts" \
+    -p build-image="image-registry.openshift-image-registry.svc:5000/$SN_ICR_NAMESPACE/accounts:1" \
+    -w name=pipeline-workspace,claimName=pipelinerun-pvc \
+    -s pipeline \
+    --showlog > pipelinerun.txt 2>&1
+```
+
 ## Author
 
 [John Rofrano](https://www.coursera.org/instructor/johnrofrano), Senior Technical Staff Member, DevOps Champion, @ IBM Research, and Instructor @ Coursera
